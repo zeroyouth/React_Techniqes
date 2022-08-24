@@ -1,82 +1,88 @@
-import React, { useEffect, useState } from 'react';
+import { memo, useCallback, useEffect, useState } from "react";
+import styled, { createGlobalStyle } from "styled-components";
+import Item from "./Item";
+import Loader from "./Loader";
 
-import Button from './components/UI/Button/Button';
-import './App.css';
-import InfiniteScroll from 'react-infinite-scroll-component';
-
-function App() {
-  // const [showParagraph, setShowParagraph] = useState(false);
-
-  // const toggleParagraphHandler = () => {
-  //   setShowParagraph((prevShowParagraph) => !prevShowParagraph);
-  // };
-  const [items, setItems] = useState([]);
-  const [hasMore, setHasMore] = useState(true);
-  const [page, setpage] = useState(2);
-
-  useEffect(() => {
-    const getComments = async () => {
-
-      const res = await fetch(
-        `http://localhost:3004/comments?_page=1&_limit=10`
-      );
-      const data = await res.json();
-      setItems(data);
-    };
-
-    getComments();
-  }, []);
-
-  console.log(items);
-
-  const fetchComments = async () => {
-    const res = await fetch(
-      `http://localhost:3004/comments?_page=${page}&_limit=10`
-    );
-    const data = await res.json();
-    return data;
+const GlobalStyle = createGlobalStyle`
+  *, *::before, *::after {
+    box-sizing: border-box;
+    padding: 0px;
+    margin: 0px;
   }
 
-  const fetchData = async () => {
-    const commentsFormServer = await fetchComments();
+  body {
+    background-color: #f2f5f7;
+  }
+`;
 
-    setItems([...items, ...commentsFormServer]);
+const AppWrap = styled.div`
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  align-items: center;
 
-    if (commentsFormServer.length === 0 || commentsFormServer.length < 10) {
-      setHasMore(false);
-    }
+  .Target-Element {
+    width: 100vw;
+    height: 140px;
+    display: flex;
+    justify-content: center;
+    text-align: center;
+    align-items: center;
+  }
+`;
 
-    setpage(page + 1);
+const App = () => {
+  const [target, setTarget] = useState(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [itemLists, setItemLists] = useState([1]);
+
+  useEffect(() => {
+    console.log(itemLists);
+  }, [itemLists]);
+
+  const getMoreItem = async () => {
+    setIsLoaded(true);
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    let Items = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    setItemLists((itemLists) => itemLists.concat(Items));
+    setIsLoaded(false);
   };
 
-  return (
-    // <div className="app">
-    //   <h1>안녕하세요</h1>
-    //   {showParagraph && <p>새로운 거</p>}
-    //   <Button onClick={toggleParagraphHandler}>문장을 보여줘</Button>
-    // </div>
-    <InfiniteScroll
-      dataLength={items.length} //This is important field to render the next data
-      next={fetchData}
-      hasMore={hasMore}
-      loader={<h4>Loading...</h4>}
-      endMessage={
-        <p style={{ textAlign: 'center' }}>
-          <b>페이지 끝 입니당~!</b>
-        </p>
-      }
-    >
-      {items.map((item) => {
-        return (
-          <div key={item.id}>
-            <div>아이디 : {item.id}</div>
-            <div>이메일 : {item.email}</div>
-            <div>코멘트 : {item.body}</div>
-          </div>
-        )
-      })}
-    </InfiniteScroll>
-  );
-}
+  const onIntersect = async ([entry], observer) => {
+    if (entry.isIntersecting && !isLoaded) {
+      observer.unobserve(entry.target);
+      await getMoreItem();
+      observer.observe(entry.target);
+    }
+  };
 
-export default App;
+  useEffect(() => {
+    let observer;
+    if (target) {
+      observer = new IntersectionObserver(onIntersect, {
+        threshold: 0.4,
+      });
+      observer.observe(target);
+    }
+    return () => observer && observer.disconnect();
+  }, [target]);
+
+  return (
+    <>
+      <GlobalStyle />
+      <AppWrap>
+        {itemLists.map((v, i) => {
+          return <Item number={i + 1} key={i} />;
+        })}
+        <div ref={setTarget} className="Target-Element">
+          {isLoaded && <Loader />}
+        </div>
+      </AppWrap>
+    </>
+  );
+};
+
+export default memo(App);
