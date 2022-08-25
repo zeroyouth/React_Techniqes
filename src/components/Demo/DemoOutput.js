@@ -1,11 +1,10 @@
 import React from 'react';
 
+import MyParagraph from './MyParagraph';
+
 const DemoOutput = (props) => {
-  return (
-    <div>
-      <p>새로운 거</p>
-    </div>
-  );
+  console.log('DemoOutput 실행중');
+  return <MyParagraph>{props.show ? '새로운 거' : ''}</MyParagraph>;
 };
 
-export default DemoOutput;
+export default React.memo(DemoOutput);
