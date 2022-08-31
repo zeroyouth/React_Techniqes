@@ -7,6 +7,11 @@ const cartSlice = createSlice({
     totalQuantity: 0,
   },
   reducers: {
+    replaceCart(state, action) {
+      state.totalQuantity = action.payload.totalQuantity;
+      state.items = action.payload.items;
+    },
+
     addItemToCart(state, action) { //장바구니 아이템 추가
       const newItem = action.payload; //항목을 추출해야한다. 
       const existingItem = state.items.find((item) => item.id === newItem.id); //아이템이 이미 존재하는지 확인하고 변수저장
